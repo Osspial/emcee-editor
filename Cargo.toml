@@ -4,3 +4,13 @@ version = "0.1.0"
 authors = ["Osspial <osspial@gmail.com>"]
 
 [dependencies]
+cgmath = { version = "0.16.1", features = ["serde"] }
+cgmath-geometry = { git = "https://github.com/Osspial/cgmath-geometry.git", features = ["serde"] }
+
+serde = "1.0"
+serde_derive = "1.0"
+
+uuid = { version = "0.6", features = ["serde"] }
+
+[replace]
+"serde_derive:1.0.37" = { git = "https://github.com/Osspial/serde", branch = "assoc_type_derive" }
