@@ -28,7 +28,7 @@ mod gui;
 mod server;
 mod render;
 
-use cgmath::{Angle, Quaternion, Euler, Rad, Vector3, Matrix3};
+use cgmath::{Angle, Quaternion, Euler, Rad, Point3, Vector3, Matrix3, Zero};
 use server::{
     Server,
     world::{World, CameraID}
@@ -64,16 +64,39 @@ fn main() {
     {
         let mut server = server.borrow_mut();
 
-        let base_room = server::world::Room {
+        let mut room_one = server::world::Room {
             id: server::world::RoomID::new(),
             dims: cgmath_geometry::DimsBox::new3(128., 128., 128.),
             portals: Vec::new()
         };
+        let mut room_two = server::world::Room {
+            id: server::world::RoomID::new(),
+            dims: cgmath_geometry::DimsBox::new3(64., 64., 64.),
+            portals: Vec::new()
+        };
+        let portal = server::world::Portal {
+            id: server::world::PortalID::new(),
+            dims: cgmath_geometry::DimsBox::new2(32., 32.),
+            rooms_linked: [room_one.id, room_two.id]
+        };
         let (dcid, default_camera) = server.world.cameras.iter_mut().next().unwrap();
         default_camera_id = *dcid;
-        default_camera.in_room = Some(base_room.id);
+        default_camera.in_room = Some(room_one.id);
 
-        server.world.rooms.insert(base_room.id, base_room);
+        room_one.portals.push(server::world::RoomPortal {
+            id: portal.id,
+            pos: Point3::new(32., 0., 32.),
+            rot: Quaternion::zero()
+        });
+        room_two.portals.push(server::world::RoomPortal {
+            id: portal.id,
+            pos: Point3::new(0., 0., 0.),
+            rot: Quaternion::zero()
+        });
+
+        server.world.rooms.insert(room_one.id, room_one);
+        server.world.rooms.insert(room_two.id, room_two);
+        server.world.portals.insert(portal.id, portal);
     }
 
     let mut window = unsafe{ derin::Window::new(
@@ -87,7 +110,6 @@ fn main() {
             match action {
                 EmceeAction::CameraMove(camera_id, move_dir) => {
                     if let Some(camera) = server.world.cameras.get_mut(&camera_id) {
-                        println!("{:?}", move_dir);
                         let move_dir_rot = Vector3 {
                             x: camera.rot.y.sin() * (move_dir.z + move_dir.y) + camera.rot.y.cos() * move_dir.x,
                             y: camera.rot.y.cos() * (move_dir.z + move_dir.y) - camera.rot.y.sin() * move_dir.x,
